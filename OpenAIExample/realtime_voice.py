@@ -29,7 +29,7 @@ from typing import Any, cast
 from typing_extensions import override
 
 from textual import events
-from audio_util import CHANNELS, SAMPLE_RATE, AudioPlayerAsync
+from OpenAIExample.audio_util import CHANNELS, SAMPLE_RATE, AudioPlayerAsync
 from textual.app import App, ComposeResult
 from textual.widgets import Button, Static, RichLog
 from textual.reactive import reactive
@@ -159,6 +159,8 @@ class RealtimeApp(App[None]):
             # note: this is the default and can be omitted
             # if you want to manually handle VAD yourself, then set `'turn_detection': None`
             await conn.session.update(session={"turn_detection": {"type": "server_vad"}})
+            await conn.session.update(session={"instructions": "Act as a support agent at a clinic, give the patient support and judge if the support is provided or not, Reply using the patient's name."})
+            await conn.session.update(session={"instructions": "Give json request for any transactional requirements such as booking appointment, updating appointment, or canceling appointment"})
 
             acc_items: dict[str, Any] = {}
 
