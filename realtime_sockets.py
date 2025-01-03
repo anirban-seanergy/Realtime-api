@@ -20,15 +20,6 @@ async def main():
 
         await connection.session.update(
             session={
-                'instructions': """
-                                    Give the output in the following format:
-                                    {"doctor": "", "department": "", "date": "", "time": ""}    
-                                """
-            }
-        )
-
-        await connection.session.update(
-            session={
                 'instructions': "Start the response with the action followed by a colon, actions can be from the following set (Booking, Update, Delete) with a json structure response"
             }
         )
