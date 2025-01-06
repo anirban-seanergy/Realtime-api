@@ -22,6 +22,7 @@
 # openai = { path = "../../", editable = true }
 # ///
 from __future__ import annotations
+import json
 
 import base64
 import asyncio
@@ -40,6 +41,7 @@ from openai.types.beta.realtime.session import Session
 from openai.resources.beta.realtime.realtime import AsyncRealtimeConnection
 
 from functionalities import tools
+from appointment_model import AppointmentDBHandler
 
 
 class SessionDisplay(Static):
@@ -207,23 +209,63 @@ class RealtimeApp(App[None]):
                     continue
 
                 if event.type == "response.done":
+                    output_type = None
+                    output_name = None
+                    output_arguments = None
+                    call_id = None
+                    response = None
                     # Extract output for the specific functionality
                     if event.response.output:  # Check if the output list is not empty
-                        output_type = getattr(event.response.output[0], 'type', None)
-                        output_name = getattr(event.response.output[0], 'name', None)
-                        output_arguments = getattr(event.response.output[0], 'arguments', None)
-                        call_id = getattr(event.response.output[0], 'call_id', None)
-                    else:
-                        output_type = None
-                        output_name = None
-                        output_arguments = None
-                        call_id = None
+                        if getattr(event.response.output[0], 'type', None) == 'function_call':
+                            output_name = getattr(event.response.output[0], 'name', None)
+                            output_arguments = getattr(event.response.output[0], 'arguments', None)
+                            call_id = getattr(event.response.output[0], 'call_id', None)
+
+                            response = self.handle_functions(function_name=output_name, args=output_arguments)
+
+                            await conn.conversation.item.create(item=(
+                                {
+                                    "type": "function_call_output",
+                                    "call_id": call_id,
+                                    "output": response
+                                }
+                            ))
+
+                            await conn.response.create()
+
                     # print(f"Functionality: {functionality['type']}")
-                    bottom_pane.write(f"Output Type: {output_type}")
-                    bottom_pane.write(f"Function Name: {output_name}")
-                    bottom_pane.write(f"Arguments: {output_arguments}")
-                    bottom_pane.write(f"Call ID: {call_id}")
+                    # bottom_pane = self.query_one("#bottom-pane", RichLog)
+                    # bottom_pane.write(f"Response : {response}")
                     continue
+
+    def handle_functions(self,function_name:str, args):
+
+        dbhandler = AppointmentDBHandler()
+
+        functions = {
+            "book_appointment": dbhandler.book_appointment,
+            "update_appointment": dbhandler.reschedule_appointment,
+            "cancel_appointment": dbhandler.cancel_appointment
+        }
+
+        if function_name not in functions:
+            return f"Function {function_name} not found."
+        
+        if not args:
+            return f"Error: No arguments provided for {function_name}."
+
+        try:
+            if isinstance(args, str):
+                args = json.loads(args)
+
+            result = functions[function_name](**args)
+            return f"{result}"
+        except TypeError as e:
+            return f"Error calling {function_name} with args {args}. Error: {str(e)}"
+        except Exception as e:
+            return f"An error occurred while executing {function_name}: {str(e)}"
+        finally:
+            dbhandler.close()
 
     async def _get_connection(self) -> AsyncRealtimeConnection:
         await self.connected.wait()
