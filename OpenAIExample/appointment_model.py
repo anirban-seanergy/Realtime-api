@@ -89,7 +89,7 @@ class AppointmentDBHandler:
         else:
             return None
 
-    def get_available_appointments(self, doctor_id: str, date: str):
+    def get_available_appointments(self, doctor_name: str, specialization: str, date: str):
         """
         Get all available 1-hour appointment slots for a doctor on a given date.
         """
@@ -100,7 +100,10 @@ class AppointmentDBHandler:
         lunch_start = datetime.strptime(f"{date} 12:00:00", "%Y-%m-%d %H:%M:%S")
         lunch_end = datetime.strptime(f"{date} 13:00:00", "%Y-%m-%d %H:%M:%S")
 
-        doctor_id = str(doctor_id).upper()
+        doctor_id = self.add_doctor(name=doctor_name, specialization=specialization)
+
+        if not doctor_id:
+            return f"Doctor {doctor_name} with specialization {specialization} not found."
 
         self.cursor.execute("""
             SELECT appointment_date

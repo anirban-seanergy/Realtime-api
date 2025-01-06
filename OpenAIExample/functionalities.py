@@ -61,5 +61,21 @@ tools = [
             },
             "required": ["appointment_id"]
             }
+    },
+    {
+        "type": "function",
+        "name": "list_availabe_slots",
+        "description": "List available slots for appointment for a doctor if the doctor exists",
+        "parameters": {
+            "type": "object",
+            "doctor_name": {
+                "type": "string",
+                "description": "The name of the doctor of whose available slots is been inquired."
+                },
+            "specialization": {
+                "type": "string",
+                "description": "The department or specialty of the doctor (e.g., Cardiology, Orthopedics)."
+            },
+        }
     }
 ]

@@ -245,7 +245,8 @@ class RealtimeApp(App[None]):
         functions = {
             "book_appointment": dbhandler.book_appointment,
             "update_appointment": dbhandler.reschedule_appointment,
-            "cancel_appointment": dbhandler.cancel_appointment
+            "cancel_appointment": dbhandler.cancel_appointment,
+            "list_availabe_slots": dbhandler.get_available_appointments
         }
 
         if function_name not in functions:
