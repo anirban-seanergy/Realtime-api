@@ -29,7 +29,7 @@ from typing import Any, cast
 from typing_extensions import override
 
 from textual import events
-from OpenAIExample.audio_util import CHANNELS, SAMPLE_RATE, AudioPlayerAsync
+from audio_util import CHANNELS, SAMPLE_RATE, AudioPlayerAsync
 from textual.app import App, ComposeResult
 from textual.widgets import Button, Static, RichLog
 from textual.reactive import reactive
@@ -38,6 +38,8 @@ from textual.containers import Container
 from openai import AsyncOpenAI
 from openai.types.beta.realtime.session import Session
 from openai.resources.beta.realtime.realtime import AsyncRealtimeConnection
+
+from functionalities import tools
 
 
 class SessionDisplay(Static):
@@ -159,8 +161,13 @@ class RealtimeApp(App[None]):
             # note: this is the default and can be omitted
             # if you want to manually handle VAD yourself, then set `'turn_detection': None`
             await conn.session.update(session={"turn_detection": {"type": "server_vad"}})
-            await conn.session.update(session={"instructions": "Act as a support agent at a clinic, give the patient support and judge if the support is provided or not, Reply using the patient's name."})
-            await conn.session.update(session={"instructions": "Give json request for any transactional requirements such as booking appointment, updating appointment, or canceling appointment"})
+
+            await conn.session.update(session={'instructions': 'Only speak in english.'})
+
+            await conn.session.update(session={
+                'tools': tools,
+                "tool_choice": "auto",
+            })
 
             acc_items: dict[str, Any] = {}
 
@@ -197,6 +204,25 @@ class RealtimeApp(App[None]):
                     bottom_pane = self.query_one("#bottom-pane", RichLog)
                     bottom_pane.clear()
                     bottom_pane.write(acc_items[event.item_id])
+                    continue
+
+                if event.type == "response.done":
+                    # Extract output for the specific functionality
+                    if event.response.output:  # Check if the output list is not empty
+                        output_type = getattr(event.response.output[0], 'type', None)
+                        output_name = getattr(event.response.output[0], 'name', None)
+                        output_arguments = getattr(event.response.output[0], 'arguments', None)
+                        call_id = getattr(event.response.output[0], 'call_id', None)
+                    else:
+                        output_type = None
+                        output_name = None
+                        output_arguments = None
+                        call_id = None
+                    # print(f"Functionality: {functionality['type']}")
+                    bottom_pane.write(f"Output Type: {output_type}")
+                    bottom_pane.write(f"Function Name: {output_name}")
+                    bottom_pane.write(f"Arguments: {output_arguments}")
+                    bottom_pane.write(f"Call ID: {call_id}")
                     continue
 
     async def _get_connection(self) -> AsyncRealtimeConnection:

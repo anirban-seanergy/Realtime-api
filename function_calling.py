@@ -44,7 +44,7 @@ async def main():
                         "time": {
                         "type": "string",
                         "format": "time",
-                        "description": "The time of the appointment (HH:MM in 24-hour format)."
+                        "description": "The time of the appointment (HH:MM)."
                         }
                     },
                     "required": ["patient_name", "doctor_name", "department", "date", "time"]
@@ -69,7 +69,7 @@ async def main():
                         "time": {
                         "type": "string",
                         "format": "time",
-                        "description": "The new time for the appointment (HH:MM in 24-hour format)."
+                        "description": "The new time for the appointment (HH:MM)."
                         }
                     },
                     "required": ["appointment_id"]
